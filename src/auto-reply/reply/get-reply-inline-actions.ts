@@ -25,6 +25,42 @@ export type InlineActionResult =
       abortedLastRun: boolean;
     };
 
+// Matches variations of "Can you maintain the computer?" with polite/ability prefixes.
+const MAINTENANCE_QUESTION_PREFIX_REGEX = /^(?:你|您)?(?:可以|能|能够|能否)?维护电脑/;
+// Intentional strict match: only question particle + optional punctuation, or punctuation alone.
+const MAINTENANCE_QUESTION_PARTICLES = new Set(["吗", "嗎"]);
+const MAINTENANCE_QUESTION_PUNCTUATION = new Set(["?", "？", "!", "！", "。"]);
+// Reply: confirms we can help with computer maintenance and asks for details/permission.
+const MAINTENANCE_QUESTION_REPLY =
+  "可以，我能帮你进行电脑维护与排查，例如更新软件、清理磁盘、检查启动项、诊断网络等。请告诉我你想处理的具体问题，并确认我可以在这台设备上执行操作。";
+
+function matchMaintenanceQuestionReply(body: string): string | null {
+  const trimmed = body.trim();
+  if (!MAINTENANCE_QUESTION_PREFIX_REGEX.test(trimmed)) {
+    return null;
+  }
+  const remaining = trimmed.replace(MAINTENANCE_QUESTION_PREFIX_REGEX, "");
+  if (!remaining) {
+    return null;
+  }
+  const questionParticle = remaining.slice(0, 1);
+  const trailingPunctuation = remaining.slice(1);
+  if (MAINTENANCE_QUESTION_PARTICLES.has(questionParticle)) {
+    if (
+      !trailingPunctuation ||
+      (trailingPunctuation.length === 1 &&
+        MAINTENANCE_QUESTION_PUNCTUATION.has(trailingPunctuation))
+    ) {
+      return MAINTENANCE_QUESTION_REPLY;
+    }
+    return null;
+  }
+  if (remaining.length === 1 && MAINTENANCE_QUESTION_PUNCTUATION.has(remaining)) {
+    return MAINTENANCE_QUESTION_REPLY;
+  }
+  return null;
+}
+
 function extractTextFromToolResult(result: any): string | null {
   if (!result || typeof result !== "object") {
     return null;
@@ -133,6 +169,12 @@ export async function handleInlineActions(params: {
 
   let directives = initialDirectives;
   let cleanedBody = initialCleanedBody;
+
+  const maintenanceReply = matchMaintenanceQuestionReply(cleanedBody);
+  if (maintenanceReply) {
+    typing.cleanup();
+    return { kind: "reply", reply: { text: maintenanceReply } };
+  }
 
   const shouldLoadSkillCommands = command.commandBodyNormalized.startsWith("/");
   const skillCommands =
