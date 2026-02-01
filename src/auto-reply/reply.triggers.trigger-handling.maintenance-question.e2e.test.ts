@@ -103,8 +103,9 @@ describe("trigger handling", () => {
         makeCfg(home),
       );
       const text = Array.isArray(res) ? res[0]?.text : res?.text;
-      expect(text).toContain("可以");
-      expect(text).toContain("维护");
+      expect(text).toContain("更新软件");
+      expect(text).toContain("清理磁盘");
+      expect(text).toContain("检查启动项");
       expect(runEmbeddedPiAgent).not.toHaveBeenCalled();
     });
   });
