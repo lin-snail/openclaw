@@ -25,26 +25,11 @@ export type InlineActionResult =
       abortedLastRun: boolean;
     };
 
-// Matches variations of "Can you maintain the computer?" in Chinese.
+// Matches variations of "Can you maintain the computer?" with polite/ability prefixes.
 const MAINTENANCE_QUESTION_PREFIX_REGEX = /^(?:你|您)?(?:可以|能|能够|能否)?维护电脑/;
-// Intentional strict match: only the standalone question particle/punctuation is allowed.
-const MAINTENANCE_QUESTION_SUFFIXES = new Set([
-  "吗",
-  "嗎",
-  "吗?",
-  "吗？",
-  "吗！",
-  "吗。",
-  "嗎?",
-  "嗎？",
-  "嗎！",
-  "嗎。",
-  "?",
-  "？",
-  "!",
-  "！",
-  "。",
-]);
+// Intentional strict match: only question particle + optional punctuation, or punctuation alone.
+const MAINTENANCE_QUESTION_PARTICLES = new Set(["吗", "嗎"]);
+const MAINTENANCE_QUESTION_PUNCTUATION = new Set(["?", "？", "!", "！", "。"]);
 // Reply: confirms we can help with computer maintenance and asks for details/permission.
 const MAINTENANCE_QUESTION_REPLY =
   "可以，我能帮你进行电脑维护与排查，例如更新软件、清理磁盘、检查启动项、诊断网络等。请告诉我你想处理的具体问题，并确认我可以在这台设备上执行操作。";
@@ -55,10 +40,21 @@ function matchMaintenanceQuestionReply(body: string): string | null {
     return null;
   }
   const remaining = trimmed.replace(MAINTENANCE_QUESTION_PREFIX_REGEX, "");
-  if (!MAINTENANCE_QUESTION_SUFFIXES.has(remaining)) {
+  if (!remaining) {
     return null;
   }
-  return MAINTENANCE_QUESTION_REPLY;
+  const particle = remaining.slice(0, 1);
+  const punctuation = remaining.slice(1);
+  if (MAINTENANCE_QUESTION_PARTICLES.has(particle)) {
+    if (!punctuation || MAINTENANCE_QUESTION_PUNCTUATION.has(punctuation)) {
+      return MAINTENANCE_QUESTION_REPLY;
+    }
+    return null;
+  }
+  if (MAINTENANCE_QUESTION_PUNCTUATION.has(remaining)) {
+    return MAINTENANCE_QUESTION_REPLY;
+  }
+  return null;
 }
 
 function extractTextFromToolResult(result: any): string | null {
