@@ -46,12 +46,15 @@ function matchMaintenanceQuestionReply(body: string): string | null {
   const particle = remaining.slice(0, 1);
   const punctuation = remaining.slice(1);
   if (MAINTENANCE_QUESTION_PARTICLES.has(particle)) {
-    if (!punctuation || MAINTENANCE_QUESTION_PUNCTUATION.has(punctuation)) {
+    if (
+      !punctuation ||
+      (punctuation.length === 1 && MAINTENANCE_QUESTION_PUNCTUATION.has(punctuation))
+    ) {
       return MAINTENANCE_QUESTION_REPLY;
     }
     return null;
   }
-  if (MAINTENANCE_QUESTION_PUNCTUATION.has(remaining)) {
+  if (remaining.length === 1 && MAINTENANCE_QUESTION_PUNCTUATION.has(remaining)) {
     return MAINTENANCE_QUESTION_REPLY;
   }
   return null;
