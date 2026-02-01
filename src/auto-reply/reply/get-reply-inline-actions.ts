@@ -43,12 +43,13 @@ function matchMaintenanceQuestionReply(body: string): string | null {
   if (!remaining) {
     return null;
   }
-  const particle = remaining.slice(0, 1);
-  const punctuation = remaining.slice(1);
-  if (MAINTENANCE_QUESTION_PARTICLES.has(particle)) {
+  const questionParticle = remaining.slice(0, 1);
+  const trailingPunctuation = remaining.slice(1);
+  if (MAINTENANCE_QUESTION_PARTICLES.has(questionParticle)) {
     if (
-      !punctuation ||
-      (punctuation.length === 1 && MAINTENANCE_QUESTION_PUNCTUATION.has(punctuation))
+      !trailingPunctuation ||
+      (trailingPunctuation.length === 1 &&
+        MAINTENANCE_QUESTION_PUNCTUATION.has(trailingPunctuation))
     ) {
       return MAINTENANCE_QUESTION_REPLY;
     }
