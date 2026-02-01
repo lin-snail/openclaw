@@ -26,18 +26,19 @@ export type InlineActionResult =
     };
 
 // Matches variations of "Can you maintain the computer?" in Chinese.
-const MAINTENANCE_PREFIX_RE = /^(?:你|您)?(?:可以|能|能够|能否)?维护电脑/;
-const MAINTENANCE_REMAINING_RE = /^[吗嗎](?:[?？!！。])?$/;
+const MAINTENANCE_QUESTION_PREFIX_REGEX = /^(?:你|您)?(?:可以|能|能够|能否)?维护电脑/;
+const MAINTENANCE_QUESTION_SUFFIX_REGEX = /^[吗嗎](?:[?？!！。])?$/;
+// Reply: confirms we can help with computer maintenance and asks for details/permission.
 const MAINTENANCE_QUESTION_REPLY =
   "可以，我能帮你进行电脑维护与排查，例如更新软件、清理磁盘、检查启动项、诊断网络等。请告诉我你想处理的具体问题，并确认我可以在这台设备上执行操作。";
 
 function matchMaintenanceQuestionReply(body: string): string | null {
   const trimmed = body.trim();
-  if (!MAINTENANCE_PREFIX_RE.test(trimmed)) {
+  if (!MAINTENANCE_QUESTION_PREFIX_REGEX.test(trimmed)) {
     return null;
   }
-  const remaining = trimmed.replace(MAINTENANCE_PREFIX_RE, "");
-  if (!MAINTENANCE_REMAINING_RE.test(remaining)) {
+  const remaining = trimmed.replace(MAINTENANCE_QUESTION_PREFIX_REGEX, "");
+  if (!MAINTENANCE_QUESTION_SUFFIX_REGEX.test(remaining)) {
     return null;
   }
   return MAINTENANCE_QUESTION_REPLY;
