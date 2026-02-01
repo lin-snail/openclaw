@@ -26,13 +26,18 @@ export type InlineActionResult =
     };
 
 // Matches variations of "Can you maintain the computer?" in Chinese.
-const MAINTENANCE_QUESTION_RE = /^(?:你|您)?(?:可以|能|能够|能否)?维护电脑[吗嗎](?:[?？!！。])?$/;
+const MAINTENANCE_PREFIX_RE = /^(?:你|您)?(?:可以|能|能够|能否)?维护电脑/;
+const MAINTENANCE_SUFFIX_RE = /^[吗嗎](?:[?？!！。])?$/;
 const MAINTENANCE_QUESTION_REPLY =
   "可以，我能帮你进行电脑维护与排查，例如更新软件、清理磁盘、检查启动项、诊断网络等。请告诉我你想处理的具体问题，并确认我可以在这台设备上执行操作。";
 
-function resolveMaintenanceQuestionReply(body: string): string | null {
+function getMaintenanceQuestionReply(body: string): string | null {
   const trimmed = body.trim();
-  if (!MAINTENANCE_QUESTION_RE.test(trimmed)) {
+  if (!MAINTENANCE_PREFIX_RE.test(trimmed)) {
+    return null;
+  }
+  const remaining = trimmed.replace(MAINTENANCE_PREFIX_RE, "");
+  if (!MAINTENANCE_SUFFIX_RE.test(remaining)) {
     return null;
   }
   return MAINTENANCE_QUESTION_REPLY;
@@ -147,7 +152,7 @@ export async function handleInlineActions(params: {
   let directives = initialDirectives;
   let cleanedBody = initialCleanedBody;
 
-  const maintenanceReply = resolveMaintenanceQuestionReply(cleanedBody);
+  const maintenanceReply = getMaintenanceQuestionReply(cleanedBody);
   if (maintenanceReply) {
     typing.cleanup();
     return { kind: "reply", reply: { text: maintenanceReply } };
